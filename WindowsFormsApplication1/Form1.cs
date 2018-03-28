@@ -14,11 +14,14 @@ namespace WindowsFormsApplication1
 {
     public partial class Form1 : Form
     {
-       
-        int state;
-        List<Process> processes = new List<Process>();
-        int Quantum;
-        double AvgWT;
+
+        public static int state;
+        public static List<Process> processes = new List<Process>();
+        public static int Quantum;
+        public static double AvgWT;
+        public int counter=0;
+        int btime = 0, min = 0, L = 1;
+        int t1, t2;
 
         public Form1()
         {
@@ -27,8 +30,9 @@ namespace WindowsFormsApplication1
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            label5.Visible = false;
+            label5.Visible = false; 
             textBox5.Visible = false;
+            processes.Clear();            
         }
 
         private void label1_Click(object sender, EventArgs e)
@@ -108,6 +112,10 @@ namespace WindowsFormsApplication1
 
         private void button2_Click(object sender, EventArgs e)//Start button
         {
+            /*Form2 Form2 = new Form2();
+            Form2.Show();
+            Hide();*/
+            
             int n = Convert.ToInt32(textBox1.Text);
             Process[] processArray = new Process[n];
 
@@ -116,7 +124,7 @@ namespace WindowsFormsApplication1
                 string name = dataGridView1.Rows[i].Cells[0].Value.ToString();
                 int arrivalTime = Convert.ToInt32(dataGridView1.Rows[i].Cells[1].Value.ToString());
                 int burstTime = Convert.ToInt32(dataGridView1.Rows[i].Cells[2].Value.ToString());
-                if (state == 5 || state == 6)
+                if (state == 4 || state == 5)
                 {
                     int priority = Convert.ToInt32(dataGridView1.Rows[i].Cells[3].Value.ToString());
                     processArray[i] = new Process(name, arrivalTime, burstTime, priority);
@@ -130,41 +138,37 @@ namespace WindowsFormsApplication1
             if(state==1)//first come first served
             {
                 fcfs();
-                textBox2.Text = AvgWT.ToString();
             }
-            else if (state == 2) //shortest job first preemtive
+            else if (state == 2) //shortest job first preemptive
             {
                 sjfp();
-                textBox2.Text = AvgWT.ToString();
             }
-            else if (state == 3)//shortest job first non preemtive
+            else if (state == 3)//shortest job first non preemptive
             {
                 sjfnp();
-                textBox2.Text = AvgWT.ToString();
             }
-            else if (state == 4)//priority preemtive
+            else if (state == 4)//priority preemptive
             {
                 prp();
-                textBox2.Text = AvgWT.ToString();
             }
-            else if (state == 5)//priority non preemtive
+            else if (state == 5)//priority non preemptive
             {
                 prnp();
-                textBox2.Text = AvgWT.ToString();
             }
             else if (state == 6)//round robin
             {
                 Quantum = Convert.ToInt32(textBox5.Text);
                 rr();
-                textBox2.Text = AvgWT.ToString();
             }
+            textBox2.Text = AvgWT.ToString();
+
         }
        
 
 
         /*--------------scheduling algorithms---------------*/
 
-        private void fcfs() //first come first served
+        public void fcfs() //first come first served
         {
             Process temp;
             for (int k = 0; k < processes.Count; k++)
@@ -205,15 +209,14 @@ namespace WindowsFormsApplication1
             
         }
         
-        private void sjfnp() //shortest job first non preemtive
+        public void sjfnp()//shortest job first non preemptive
         {
             Process temp;
-            for (int k = 0; k < processes.Count; k++)
+            for (int k = 0; k <processes.Count; k++)
             {
                 for (int i = k + 1; i < processes.Count; i++)
                 {
-                    if (processes[k].arrivalTime >= processes[i].arrivalTime && processes[k].burstTime > processes[i].burstTime)
-                    //sort by burst time ascendengly 
+                    if ((processes[k].arrivalTime > processes[i].arrivalTime) || (processes[k].arrivalTime == processes[i].arrivalTime && processes[k].burstTime > processes[i].burstTime))
                     {
                         temp = processes[i];
                         processes[i] = processes[k];
@@ -221,6 +224,23 @@ namespace WindowsFormsApplication1
                     }
                 }
             }
+            for (int k = 0; k < processes.Count - 1; k++)
+            {
+                btime = btime + processes[k].burstTime;
+                min = processes[L].burstTime;
+                for (int i = k + 1; i < processes.Count; i++)
+                {
+                    if (btime >= processes[i].arrivalTime && processes[i].burstTime < min)
+                    {
+                        temp = processes[i];
+                        processes[i] = processes[L];
+                        processes[L] = temp;
+                    }
+                }
+                L++;
+            }
+
+
             int clock = 0, totalwait = 0;
             for (int i = 0; i < processes.Count; i++)
             {
@@ -243,10 +263,9 @@ namespace WindowsFormsApplication1
                 totalwait += processes[i].wait;
             }
             AvgWT = (double)totalwait / (double)processes.Count;
-            
         }
         
-        private void sjfp() //shortest job first preemtive
+        public void sjfp() //shortest job first preemptive
         {
             Process temp;
             for (int k = 0; k < processes.Count; k++)
@@ -297,7 +316,7 @@ namespace WindowsFormsApplication1
             AvgWT = (double)totalwait / (double)processes.Count;
         }
         
-        private void prnp() //priority non preemtive
+        public void prnp() //priority non preemptive
         {
             Process temp;
             for (int k = 0; k < processes.Count; k++)
@@ -312,6 +331,21 @@ namespace WindowsFormsApplication1
                         processes[k] = temp;
                     }
                 }
+            }
+            for (int k = 0; k < processes.Count - 1; k++)
+            {
+                btime = btime + processes[k].priority;
+                min = processes[L].priority;
+                for (int i = k + 1; i < processes.Count; i++)
+                {
+                    if (btime >= processes[i].arrivalTime && processes[i].priority < min)
+                    {
+                        temp = processes[i];
+                        processes[i] = processes[L];
+                        processes[L] = temp;
+                    }
+                }
+                L++;
             }
             int clock = 0, totalwait = 0;
             for (int i = 0; i < processes.Count; i++)
@@ -337,7 +371,7 @@ namespace WindowsFormsApplication1
             AvgWT = (double)totalwait / (double)processes.Count;
         }
         
-        private void prp() //priority preemtive
+        public void prp() //priority preemptive
         {
             Process temp;
             for (int k = 0; k < processes.Count; k++)
@@ -388,7 +422,7 @@ namespace WindowsFormsApplication1
             AvgWT = (double)totalwait / (double)processes.Count;
         }
         
-        private void rr() //round robin
+        public void rr() //round robin
         {
             Queue<Process> q = new Queue<Process>();
             for (int i = 0; i < processes.Count; i++) q.Enqueue(processes[i]);
@@ -436,9 +470,28 @@ namespace WindowsFormsApplication1
 
         }
 
-        private void button3_Click(object sender, EventArgs e)//Reset button
+        private void button3_Click(object sender, EventArgs e)
         {
-            textBox2.Text = string.Empty;
+            
+
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void button4_Click_1(object sender, EventArgs e)
+        {
+        }
+
+        private void label7_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void button3_Click_1(object sender, EventArgs e)//Reset button
+        {
             textBox1.Text = string.Empty;
             dataGridView1.Rows.Clear();
             dataGridView1.Refresh();
@@ -454,14 +507,13 @@ namespace WindowsFormsApplication1
             textBox5.Text = string.Empty;
             AvgWT = 0;
             processes.Clear();            
-
         }
 
        
        
     }
 
-    class Process
+    public class Process
     {
 
         public string name;
